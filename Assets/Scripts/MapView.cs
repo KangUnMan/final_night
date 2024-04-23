@@ -212,28 +212,29 @@ namespace Map // map에 성격을 가지고있는것들을 모아둔 네임스�
 
             // 어떤 경우에도, 최종 노드에서 나가는 연결을 보이는/도달 가능한 색으로 표시합니다.
             var currentPoint = mapManager.CurrentMap.path[mapManager.CurrentMap.path.Count - 1]; // 현재경로의 마지막 포인트를 currentPoint 변수에 준다.
-            var currentNode = mapManager.CurrentMap.GetNode(currentPoint);
+            var currentNode = mapManager.CurrentMap.GetNode(currentPoint); // 내마지막 노드 currentNode
 
-            foreach (var point in currentNode.outgoing)
+            foreach (var point in currentNode.outgoing) // 방문한 노드 색칠
             {
                 var lineConnection = lineConnections.FirstOrDefault(conn => conn.from.Node == currentNode &&
                                                                             conn.to.Node.point.Equals(point));
                 lineConnection?.SetColor(lineVisitedColor);
             }
 
-            if (mapManager.CurrentMap.path.Count <= 1) return;
+            if (mapManager.CurrentMap.path.Count <= 1) return;  // 플레이어가 이동한 경로가 1이하일경우(한번도 안움직였다면..)메소드를 종료한다.
 
-            for (var i = 0; i < mapManager.CurrentMap.path.Count - 1; i++)
+            for (var i = 0; i < mapManager.CurrentMap.path.Count - 1; i++) //이동한 경로까지 반복실행
             {
-                var current = mapManager.CurrentMap.path[i];
-                var next = mapManager.CurrentMap.path[i + 1];
+                var current = mapManager.CurrentMap.path[i];//
+                var next = mapManager.CurrentMap.path[i + 1]; //이동할 다음 경로
                 var lineConnection = lineConnections.FirstOrDefault(conn => conn.@from.Node.point.Equals(current) &&
                                                                             conn.to.Node.point.Equals(next));
-                lineConnection?.SetColor(lineVisitedColor);
+                lineConnection?.SetColor(lineVisitedColor); // null이 아닌 경우에만 해당 라인의 색상을 변경. 라인이 존재하지 않는다면 아무런 작업도 수행하지 않고 넘어가기 위함
             }
         }
 
-        protected virtual void SetOrientation()
+
+        protected virtual void SetOrientation() 
         {
             var scrollNonUi = mapParent.GetComponent<ScrollNonUI>();
             var span = mapManager.CurrentMap.DistanceBetweenFirstAndLastLayers();
@@ -289,35 +290,35 @@ namespace Map // map에 성격을 가지고있는것들을 모아둔 네임스�
             }
         }
 
-        private void DrawLines()
+        private void DrawLines() // 연결된 선을 그리는 메소드
         {
-            foreach (var node in MapNodes)
+            foreach (var node in MapNodes) // 현재 맵의 모든 노드 반복
             {
-                foreach (var connection in node.Node.outgoing)
-                    AddLineConnection(node, GetNode(connection));
+                foreach (var connection in node.Node.outgoing) // 현재 노드에서 나갈 수 있는 모든 노드
+                    AddLineConnection(node, GetNode(connection)); // 각 연결(선)에 대해 해당하는 다른 노드를 가져와서,AddLineConnection() 메소드를 호출 노드 간의 연결을 표시
             }
         }
 
-        private void ResetNodesRotation()
+        private void ResetNodesRotation() //각 노드의 회전을 초기화하는 역할을 함, 호출 될시 초기화디어 동일한 방향으로 정렬
         {
             foreach (var node in MapNodes)
                 node.transform.rotation = Quaternion.identity;
         }
 
-        protected virtual void AddLineConnection(MapNode from, MapNode to)
+        protected virtual void AddLineConnection(MapNode from, MapNode to) 
         {
-            if (linePrefab == null) return;
+            if (linePrefab == null) return; // 라인 프리펩이 설정되지않았다면 메소드 실행중지
 
-            var lineObject = Instantiate(linePrefab, mapParent.transform);
-            var lineRenderer = lineObject.GetComponent<LineRenderer>();
-            var fromPoint = from.transform.position +
+            var lineObject = Instantiate(linePrefab, mapParent.transform); // 라인 프리팹을 복제하여 선 오브젝트 생성
+            var lineRenderer = lineObject.GetComponent<LineRenderer>(); // 생성된 선 오브젝트에서 라인 컴포넌트를 가져옴
+            var fromPoint = from.transform.position + //시작점과 끝점 간의 중간점을 계산
                             (to.transform.position - from.transform.position).normalized * offsetFromNodes;
 
-            var toPoint = to.transform.position +
+            var toPoint = to.transform.position + //끝점에서 시작점으로의 중간점 계산
                           (from.transform.position - to.transform.position).normalized * offsetFromNodes;
-
-            // drawing lines in local space:
-            lineObject.transform.position = fromPoint;
+           
+            // 로컬 공간에 선 그리기
+            lineObject.transform.position = fromPoint; // 선 오브젝트의 위치를 시작점으로 계산
             lineRenderer.useWorldSpace = false;
 
             // line renderer with 2 points only does not handle transparency properly:
@@ -334,17 +335,17 @@ namespace Map // map에 성격을 가지고있는것들을 모아둔 네임스�
             lineConnections.Add(new LineConnection(lineRenderer, null, from, to));
         }
 
-        protected MapNode GetNode(Point p)
+        protected MapNode GetNode(Point p) //. 이 메서드는 Point 객체를 인자로 받아서 해당하는 MapNode를 반환
         {
             return MapNodes.FirstOrDefault(n => n.Node.point.Equals(p));
         }
 
-        protected MapConfig GetConfig(string configName)
+        protected MapConfig GetConfig(string configName) // 이 메서드는 주어진 configName과 일치하는 MapConfig를 반환한다.
         {
             return allMapConfigs.FirstOrDefault(c => c.name == configName);
         }
 
-        protected NodeBlueprint GetBlueprint(NodeType type)
+        protected NodeBlueprint GetBlueprint(NodeType type) //특정 NodeType에 해당하는 노드 블루프린트를 반환
         {
             var config = GetConfig(mapManager.CurrentMap.configName);
             return config.nodeBlueprints.FirstOrDefault(n => n.nodeType == type);
